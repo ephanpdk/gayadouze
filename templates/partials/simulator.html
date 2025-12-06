@@ -1,62 +1,78 @@
-<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-24">
-    <div class="bg-slate-50/50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-        <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
-            <span class="w-2 h-2 bg-indigo-500 rounded-full"></span> Input Features
-        </h3>
-        <button onclick="resetSim()" class="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition">RESET</button>
-    </div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
     
-    <div class="p-6 space-y-8">
-        <div class="space-y-3">
-            <div class="flex justify-between items-end">
-                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Monetary (Total Spend)</label>
-                <span id="disp-money" class="text-sm font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">$1,000</span>
+    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+        <div class="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
+            <div class="bg-indigo-100 text-indigo-600 w-8 h-8 rounded-lg flex items-center justify-center">
+                <i class="fa-solid fa-wallet text-xs"></i>
             </div>
-            <input type="range" id="in-money" min="10" max="10000" step="50" value="1000" class="slider-track w-full">
-            <div class="flex justify-between text-[10px] text-slate-300 font-bold uppercase">
-                <span>Low Value</span><span>High Value</span>
-            </div>
+            <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider">Transactional (RFM)</h3>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-                <label class="text-[10px] font-bold text-slate-400 uppercase">Frequency (Tx Count)</label>
-                <input type="number" id="in-freq" value="5" min="1" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition outline-none">
-            </div>
-            <div class="space-y-1">
-                <label class="text-[10px] font-bold text-slate-400 uppercase">Recency (Days Ago)</label>
-                <input type="number" id="in-rec" value="30" min="0" max="365" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition outline-none">
-            </div>
-        </div>
-
-        <div class="space-y-6 pt-2 border-t border-slate-100">
-            <div class="space-y-2">
-                <div class="flex justify-between text-xs">
-                    <span class="font-bold text-slate-500">Page Views</span>
-                    <span id="disp-views" class="font-mono font-bold text-slate-700">50</span>
-                </div>
-                <input type="range" id="in-views" min="1" max="500" value="50" class="slider-track w-full h-1.5 bg-slate-100">
-            </div>
-            <div class="space-y-2">
-                <div class="flex justify-between text-xs">
-                    <span class="font-bold text-slate-500">Add to Cart</span>
-                    <span id="disp-cart" class="font-mono font-bold text-slate-700">15</span>
-                </div>
-                <input type="range" id="in-cart" min="0" max="50" value="15" class="slider-track w-full h-1.5 bg-slate-100">
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 pt-2">
+        <div class="space-y-5">
             <div>
-                <label class="text-[10px] font-bold text-slate-400 uppercase">Avg Items/Order</label>
-                <input type="number" id="in-avg" value="3.5" step="0.1" class="w-full p-2 bg-white border border-slate-200 rounded text-xs">
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
+                    <label>Total Spend (Monetary)</label>
+                    <span id="disp-money" class="text-indigo-600">$1000</span>
+                </div>
+                <input type="range" id="in-money" min="10" max="5000" step="10" value="1000" class="w-full slider-track h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
             </div>
+
             <div>
-                <label class="text-[10px] font-bold text-slate-400 uppercase">Wishlist Items</label>
-                <input type="number" id="in-wish" value="2" class="w-full p-2 bg-white border border-slate-200 rounded text-xs">
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
+                    <label>Purchase Count (Frequency)</label>
+                    <span id="disp-freq" class="text-indigo-600">5</span>
+                </div>
+                <input type="range" id="in-freq" min="1" max="50" step="1" value="5" class="w-full slider-track h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
             </div>
+
+            <div>
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
+                    <label>Days Since Last Buy (Recency)</label>
+                    <span id="disp-rec" class="text-indigo-600">30 days</span>
+                </div>
+                <input type="range" id="in-rec" min="1" max="365" step="1" value="30" class="w-full slider-track h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                <p class="text-[10px] text-slate-400 mt-1">*Lower is better (More active)</p>
+            </div>
+            
+             <input type="hidden" id="in-avg" value="2.5">
+        </div>
+    </div>
+
+    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+        <div class="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
+            <div class="bg-pink-100 text-pink-600 w-8 h-8 rounded-lg flex items-center justify-center">
+                <i class="fa-solid fa-heart-pulse text-xs"></i>
+            </div>
+            <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider">Engagement & Interest</h3>
         </div>
 
+        <div class="space-y-5">
+            <div>
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
+                    <label>Monthly Page Views</label>
+                    <span id="disp-views" class="text-pink-600">50</span>
+                </div>
+                <input type="range" id="in-views" min="0" max="500" step="5" value="50" class="w-full slider-track h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <div>
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
+                    <label>Add to Cart Events</label>
+                    <span id="disp-cart" class="text-pink-600">15</span>
+                </div>
+                <input type="range" id="in-cart" min="0" max="100" step="1" value="15" class="w-full slider-track h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <div>
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
+                    <label>Wishlist Items</label>
+                    <span id="disp-wish" class="text-pink-600">5</span>
+                </div>
+                <input type="range" id="in-wish" min="0" max="50" step="1" value="5" class="w-full slider-track h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+        </div>
+    </div>
+</div>
         <button onclick="runPrediction()" class="w-full group relative bg-slate-900 hover:bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-xl shadow-slate-900/10 transition-all duration-300 active:scale-[0.98]">
             <div class="flex items-center justify-center gap-2">
                 <span class="text-xs uppercase tracking-widest group-hover:tracking-wider transition-all">Predict Persona</span>

@@ -199,11 +199,71 @@
     function logout() { localStorage.clear(); token=null; user=null; renderAuth(); toast('Logged Out', 'info'); }
 
     function bindSliders() {
-        const updateVal = (id, val, pre='') => { const el = document.getElementById(`disp-${id.split('-')[1]}`); if(el) el.innerText = pre + val; };
-        document.getElementById('in-money').addEventListener('input', (e) => updateVal(e.target.id, e.target.value, '$'));
-        document.getElementById('in-views').addEventListener('input', (e) => updateVal(e.target.id, e.target.value));
-        document.getElementById('in-cart').addEventListener('input', (e) => updateVal(e.target.id, e.target.value));
+    const updateVal = (id, val, pre='', post='') => { 
+        const key = id.split('-')[1];
+        const el = document.getElementById(`disp-${key}`); 
+        if(el) el.innerText = pre + val + post; 
+    };
+    
+    document.getElementById('in-money').addEventListener('input', (e) => updateVal(e.target.id, e.target.value, '$'));
+    document.getElementById('in-freq').addEventListener('input', (e) => updateVal(e.target.id, e.target.value));
+    document.getElementById('in-rec').addEventListener('input', (e) => updateVal(e.target.id, e.target.value, '', ' days'));
+    document.getElementById('in-views').addEventListener('input', (e) => updateVal(e.target.id, e.target.value));
+    document.getElementById('in-cart').addEventListener('input', (e) => updateVal(e.target.id, e.target.value));
+    document.getElementById('in-wish').addEventListener('input', (e) => updateVal(e.target.id, e.target.value));
+}
+
+    function generateInsights(payload, clusterIdx) {
+    // Fallback kalau metrics belum load
+    if(!metrics || !metrics.centroids_real) return {
+        why: "Data metrics not loaded yet.",
+        compare: "Cannot compare without baseline.",
+        anomaly: "Unknown."
+    };
+
+    const centroid = metrics.centroids_real[clusterIdx];
+    const avgs = metrics.centroids_real.reduce((acc, curr) => {
+        acc.Monetary += curr.Monetary;
+        acc.Page_Views += curr.Page_Views;
+        return acc;
+    }, {Monetary:0, Page_Views:0});
+    const globalAvgMoney = avgs.Monetary / metrics.centroids_real.length;
+
+    // A. LOGIC: WHY (Dominant Factor)
+    let why = "User behavior aligns with standard segment profile.";
+    if (payload.Monetary > centroid.Monetary * 1.1) {
+        why = "User spending is significantly higher than the segment baseline.";
+    } else if (payload.Recency < centroid.Recency * 0.8) {
+        why = "User is much more active (lower Recency) than typical segment members.";
+    } else if (payload.Page_Views > centroid.Page_Views * 1.5) {
+        why = "Engagement (Views) is the primary driver for this classification.";
     }
+
+    // B. LOGIC: COMPARE (Percentage Diff)
+    const diffMoney = ((payload.Monetary - centroid.Monetary) / centroid.Monetary) * 100;
+    const diffFreq = payload.Frequency - centroid.Frequency;
+    let compare = `Spending is ${Math.abs(diffMoney).toFixed(1)}% ${diffMoney >= 0 ? 'higher' : 'lower'} than segment average.`;
+    if(Math.abs(diffMoney) < 5) {
+        compare = `Purchase frequency variance is ${diffFreq > 0 ? '+' : ''}${diffFreq} orders vs segment average.`;
+    }
+
+    // C. LOGIC: ANOMALY (Cross-Metric Logic)
+    let anomaly = "No significant anomalies detected.";
+    // High Interest, Low Action
+    if (payload.Page_Views > 80 && payload.Frequency < 2) {
+        anomaly = "⚠️ High Browsing but Low Conversion (Window Shopper Risk).";
+    }
+    // High Spend, Low Engagement (Impulsive)
+    else if (payload.Monetary > 2000 && payload.Page_Views < 10) {
+        anomaly = "⚠️ High Value Purchase with Minimal Browsing (Impulse/Targeted Buy).";
+    }
+    // Churn Risk
+    else if (payload.Recency > 100 && payload.Monetary > 1000) {
+        anomaly = "⚠️ High Value Customer at Risk of Churning (High Recency).";
+    }
+
+    return { why, compare, anomaly };
+}
 
     function resetSim() {
         document.getElementById('in-money').value=1000; document.getElementById('disp-money').innerText='$1000';
