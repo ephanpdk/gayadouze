@@ -214,7 +214,6 @@
 }
 
     function generateInsights(payload, clusterIdx) {
-    // Fallback kalau metrics belum load
     if(!metrics || !metrics.centroids_real) return {
         why: "Data metrics not loaded yet.",
         compare: "Cannot compare without baseline.",
@@ -222,47 +221,54 @@
     };
 
     const centroid = metrics.centroids_real[clusterIdx];
-    const avgs = metrics.centroids_real.reduce((acc, curr) => {
-        acc.Monetary += curr.Monetary;
-        acc.Page_Views += curr.Page_Views;
-        return acc;
-    }, {Monetary:0, Page_Views:0});
-    const globalAvgMoney = avgs.Monetary / metrics.centroids_real.length;
-
-    // A. LOGIC: WHY (Dominant Factor)
+    
+    // 1. ADVANCED LOGIC: Feature Combination (Why)
     let why = "User behavior aligns with standard segment profile.";
-    if (payload.Monetary > centroid.Monetary * 1.1) {
-        why = "User spending is significantly higher than the segment baseline.";
-    } else if (payload.Recency < centroid.Recency * 0.8) {
-        why = "User is much more active (lower Recency) than typical segment members.";
-    } else if (payload.Page_Views > centroid.Page_Views * 1.5) {
-        why = "Engagement (Views) is the primary driver for this classification.";
+    
+    // High Interest (Views) but Low Commitment (Freq/Money)
+    if (payload.Page_Views > centroid.Page_Views * 1.2 && payload.Frequency < centroid.Frequency) {
+        why = "High engagement intent detected, but conversion rate lags behind segment average.";
+    }
+    // Efficient Buyer (Low Views, High Money)
+    else if (payload.Page_Views < centroid.Page_Views * 0.8 && payload.Monetary > centroid.Monetary) {
+        why = "Decisive buyer pattern: High transaction value with minimal browsing time.";
+    }
+    // Hoarding Behavior (High Cart, Low Freq)
+    else if (payload.Add_to_Cart_Count > centroid.Add_to_Cart_Count * 1.5 && payload.Frequency <= centroid.Frequency) {
+        why = "Cart abandonment risk: User adds significantly more items than they purchase.";
+    }
+    // Churning High Value (High Money, High Recency)
+    else if (payload.Monetary > centroid.Monetary && payload.Recency > 60) {
+        why = "Dormant VIP: High historical value but inactive for an extended period.";
     }
 
-    // B. LOGIC: COMPARE (Percentage Diff)
+    // 2. PRESSURE LEVEL & COMPARISON
     const diffMoney = ((payload.Monetary - centroid.Monetary) / centroid.Monetary) * 100;
-    const diffFreq = payload.Frequency - centroid.Frequency;
-    let compare = `Spending is ${Math.abs(diffMoney).toFixed(1)}% ${diffMoney >= 0 ? 'higher' : 'lower'} than segment average.`;
-    if(Math.abs(diffMoney) < 5) {
-        compare = `Purchase frequency variance is ${diffFreq > 0 ? '+' : ''}${diffFreq} orders vs segment average.`;
+    let pressure = "Stable";
+    
+    if (payload.Recency > 90) pressure = "High Risk (Churn)";
+    else if (payload.Recency > 45 && payload.Monetary > 2000) pressure = "Medium Risk";
+    else if (payload.Recency < 7 && payload.Frequency > 10) pressure = "High Opportunity";
+
+    let compare = `Spending ${Math.abs(diffMoney).toFixed(1)}% ${diffMoney >= 0 ? 'above' : 'below'} avg. Status: ${pressure}.`;
+
+    // 3. DECISION SUPPORT: Business Action (Anomaly Slot)
+    let action = "Maintain standard communication.";
+
+    // Logic Matrix for Actions
+    if (pressure.includes("Churn") && payload.Monetary > 1500) {
+        action = "🚨 URGENT: Deploy Win-back Campaign via Direct Call/SMS.";
+    } else if (payload.Page_Views > 60 && payload.Frequency === 0) {
+        action = "💡 OPPORTUNITY: Send First-Purchase Discount Coupon.";
+    } else if (payload.Add_to_Cart_Count > 10 && payload.Recency < 3) {
+        action = "🔥 HOT LEAD: Trigger 'Items in Cart' Reminder immediately.";
+    } else if (clusterIdx === 3 && payload.Recency < 14) {
+        action = "⭐ VIP: Offer Early Access to New Collections.";
+    } else if (payload.Wishlist_Count > 5) {
+        action = "🔔 NUDGE: Notify regarding stock availability for wishlist.";
     }
 
-    // C. LOGIC: ANOMALY (Cross-Metric Logic)
-    let anomaly = "No significant anomalies detected.";
-    // High Interest, Low Action
-    if (payload.Page_Views > 80 && payload.Frequency < 2) {
-        anomaly = "⚠️ High Browsing but Low Conversion (Window Shopper Risk).";
-    }
-    // High Spend, Low Engagement (Impulsive)
-    else if (payload.Monetary > 2000 && payload.Page_Views < 10) {
-        anomaly = "⚠️ High Value Purchase with Minimal Browsing (Impulse/Targeted Buy).";
-    }
-    // Churn Risk
-    else if (payload.Recency > 100 && payload.Monetary > 1000) {
-        anomaly = "⚠️ High Value Customer at Risk of Churning (High Recency).";
-    }
-
-    return { why, compare, anomaly };
+    return { why, compare, anomaly: action };
 }
 
     function resetSim() {
@@ -328,6 +334,33 @@
                 <h4 class="font-bold text-slate-800 text-sm mb-2">${p.name}</h4>
                 <div class="flex justify-between items-center pt-3 border-t border-slate-50"><span class="font-mono font-bold text-slate-900">$${p.price}</span><button class="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition shadow-lg active:scale-90"><i class="fa-solid fa-plus text-xs"></i></button></div>
             </div>`).join('');
+        
+        const currentPayload = {
+        Monetary: parseFloat(document.getElementById('in-money').value),
+        Frequency: parseInt(document.getElementById('in-freq').value),
+        Recency: parseInt(document.getElementById('in-rec').value),
+        Page_Views: parseInt(document.getElementById('in-views').value),
+        Add_to_Cart_Count: parseInt(document.getElementById('in-cart').value),
+        Wishlist_Count: parseInt(document.getElementById('in-wish').value)
+    };
+    
+    const insights = generateInsights(currentPayload, data.cluster);
+    
+    document.getElementById('bs-why').innerText = insights.why;
+    document.getElementById('bs-compare').innerText = insights.compare;
+    
+    // Bagian Anomaly sekarang menjadi Strategic Action
+    const anomalyEl = document.getElementById('bs-anomaly');
+    anomalyEl.innerText = insights.anomaly;
+    
+    // Update styling dinamis untuk action urgency
+    if(insights.anomaly.includes("URGENT")) {
+        anomalyEl.className = "text-[10px] font-bold text-red-600 bg-red-50 p-2 rounded border border-red-100 mt-auto animate-pulse";
+    } else if (insights.anomaly.includes("OPPORTUNITY") || insights.anomaly.includes("HOT")) {
+        anomalyEl.className = "text-[10px] font-bold text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 mt-auto";
+    } else {
+        anomalyEl.className = "text-[10px] font-bold text-slate-600 bg-slate-50 p-2 rounded border border-slate-200 mt-auto";
+    }
     }
 
     function addLog(cluster, money) {
