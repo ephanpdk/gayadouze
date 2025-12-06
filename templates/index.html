@@ -3,371 +3,600 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartShop AI</title>
+    <title>SmartShop AI - ML Implementation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .slider-thumb::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #f97316; cursor: pointer; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .slider-thumb::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #0f172a; cursor: pointer; transition: 0.2s; }
+        .slider-thumb::-webkit-slider-thumb:hover { transform: scale(1.2); }
         .shimmer { background: #f6f7f8; background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%); background-repeat: no-repeat; background-size: 800px 104px; animation: placeholderShimmer 1s linear infinite forwards; }
         @keyframes placeholderShimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
     </style>
 </head>
-<body class="text-gray-800">
+<body class="text-slate-800 antialiased">
 
-<div id="toastContainer" class="fixed top-5 right-5 z-[100] space-y-2"></div>
+    <div id="toastContainer" class="fixed top-5 right-5 z-[100] space-y-2"></div>
 
-<nav class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16 items-center">
-            <div onclick="location.reload()" class="flex items-center gap-3 cursor-pointer">
-                <div class="bg-orange-500 text-white p-2 rounded-lg"><i class="fa-solid fa-brain text-xl"></i></div>
-                <span class="font-bold text-xl text-gray-900">SmartShop<span class="text-orange-500">AI</span></span>
-            </div>
-            <div class="flex items-center gap-4">
-                <button onclick="showModelInsights()" class="text-sm font-medium text-gray-500 hover:text-orange-600 flex items-center gap-1">
-                    <i class="fa-solid fa-chart-radar"></i> Model Insights
-                </button>
-                <div id="authBtnArea"></div>
-            </div>
-        </div>
-    </div>
-</nav>
-
-<div id="authModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center backdrop-blur-sm">
-    <div class="bg-white rounded-2xl w-full max-w-sm p-8 relative shadow-2xl">
-        <button onclick="toggleModal('authModal')" class="absolute top-4 right-4 text-gray-300 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
-        <div class="flex border-b border-gray-100 mb-6">
-            <button onclick="switchAuthTab('login')" id="tabLogin" class="w-1/2 py-3 font-bold text-orange-600 border-b-2 border-orange-600">Login</button>
-            <button onclick="switchAuthTab('register')" id="tabRegister" class="w-1/2 py-3 font-bold text-gray-400">Register</button>
-        </div>
-        <div id="loginForm" class="space-y-4">
-            <input type="email" id="loginEmail" placeholder="admin@toko.com" class="w-full p-3 border rounded-lg text-sm">
-            <input type="password" id="loginPass" placeholder="••••••••" class="w-full p-3 border rounded-lg text-sm">
-            <button onclick="handleLogin()" class="w-full bg-orange-600 text-white font-bold py-3 rounded-lg">Access System</button>
-        </div>
-        <div id="registerForm" class="space-y-4 hidden">
-            <input type="text" id="regName" placeholder="Full Name" class="w-full p-3 border rounded-lg text-sm">
-            <input type="email" id="regEmail" placeholder="Email" class="w-full p-3 border rounded-lg text-sm">
-            <input type="password" id="regPass" placeholder="Password" class="w-full p-3 border rounded-lg text-sm">
-            <button onclick="handleRegister()" class="w-full bg-gray-900 text-white font-bold py-3 rounded-lg">Create Account</button>
-        </div>
-    </div>
-</div>
-
-<div id="insightsModal" class="fixed inset-0 bg-black/80 z-[70] hidden flex items-center justify-center backdrop-blur-md">
-    <div class="bg-white rounded-2xl w-full max-w-4xl p-6 relative shadow-2xl h-[90vh] overflow-y-auto">
-        <button onclick="toggleModal('insightsModal')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="md:col-span-2">
-                <h3 class="text-xl font-bold mb-1">Cluster Centroids Visualization</h3>
-                <div class="h-80 w-full relative"><canvas id="radarChart"></canvas></div>
-            </div>
-            <div class="space-y-4 overflow-y-auto pr-2">
-                <h3 class="text-lg font-bold">Cluster Profiling</h3>
-                <div id="clusterProfiles" class="space-y-3 text-sm">
-                    <div class="animate-pulse bg-gray-100 h-20 rounded"></div>
+    <nav class="bg-white sticky top-0 z-50 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="location.reload()">
+                    <div class="bg-slate-900 text-white p-2 rounded-lg">
+                        <i class="fa-solid fa-layer-group text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-lg text-slate-900 tracking-tight">SmartShop<span class="text-indigo-600">AI</span></span>
+                        <div class="text-[10px] text-slate-500 font-mono">ML.CLUSTERING.V1</div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-        <div class="lg:col-span-4 space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border p-6 sticky top-24">
-                <div class="mb-6 pb-4 border-b">
-                    <h3 class="font-bold text-gray-900 flex items-center gap-2">
-                        <i class="fa-solid fa-sliders text-orange-500"></i> Behavior Simulator
-                    </h3>
-                </div>
-
-                <div class="space-y-5">
-                    <div>
-                        <label class="text-xs font-bold text-gray-600 uppercase flex justify-between">
-                            Monetary <span id="valMoney" class="text-orange-600">$1000</span>
-                        </label>
-                        <input type="range" id="inMoney" min="10" max="10000" step="50" value="1000" class="w-full h-2 bg-gray-200 slider-thumb">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-xs font-semibold text-gray-500 uppercase">Frequency</label>
-                            <input type="number" id="inFreq" value="5" min="1" class="w-full p-2 border rounded text-sm">
-                        </div>
-                        <div>
-                            <label class="text-xs font-semibold text-gray-500 uppercase">Recency</label>
-                            <input type="number" id="inRec" value="30" min="0" max="365" class="w-full p-2 border rounded text-sm">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase flex justify-between">
-                            Page Views <span id="valViews">50</span>
-                        </label>
-                        <input type="range" id="inViews" min="1" max="500" value="50" class="w-full h-1.5 bg-gray-200">
-                    </div>
-
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase flex justify-between">
-                            Add to Cart <span id="valCart">15</span>
-                        </label>
-                        <input type="range" id="inCart" min="0" max="50" value="15" class="w-full h-1.5 bg-gray-200">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-lg">
-                        <div>
-                            <label class="text-[10px] text-gray-500 uppercase">Avg Items</label>
-                            <input type="number" id="inAvg" value="3.5" step="0.1" class="w-full p-1.5 text-xs border rounded bg-white">
-                        </div>
-                        <div>
-                            <label class="text-[10px] text-gray-500 uppercase">Wishlist</label>
-                            <input type="number" id="inWish" value="2" class="w-full p-1.5 text-xs border rounded bg-white">
-                        </div>
-                    </div>
-
-                    <button onclick="getPrediction()" class="w-full bg-gray-900 text-white font-bold py-3 rounded-lg shadow-lg flex justify-center items-center gap-2">
-                        <i class="fa-solid fa-bolt"></i> Run Prediction
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleModal('aboutModal')" class="hidden md:flex text-xs font-bold uppercase text-slate-500 hover:text-indigo-600 items-center gap-1 transition px-3 py-2 border border-transparent hover:border-slate-200 rounded-lg">
+                        <i class="fa-solid fa-book mr-1"></i> Model Specs
                     </button>
+                    <button onclick="showModelInsights()" class="text-xs font-bold uppercase text-slate-500 hover:text-indigo-600 flex items-center gap-1 transition px-3 py-2 border border-transparent hover:border-slate-200 rounded-lg">
+                        <i class="fa-solid fa-chart-simple mr-1"></i> Evaluation
+                    </button>
+                    <div id="authBtnArea" class="pl-2 border-l border-slate-200"></div>
                 </div>
             </div>
         </div>
+    </nav>
 
-        <div class="lg:col-span-8">
-            <div id="resultState" class="hidden space-y-6">
-                <div class="bg-white rounded-xl shadow-sm border p-6">
-                    <div class="flex items-start md:items-center justify-between gap-4 mb-4 border-b pb-4">
-                        <div class="flex items-center gap-4">
-                            <div id="personaIcon" class="h-14 w-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-2xl">
+    <div id="authModal" class="fixed inset-0 bg-slate-900/50 z-[60] hidden flex items-center justify-center backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white rounded-xl w-full max-w-sm p-8 relative shadow-2xl">
+            <button onclick="toggleModal('authModal')" class="absolute top-4 right-4 text-slate-300 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="flex border-b border-slate-100 mb-6">
+                <button onclick="switchAuthTab('login')" id="tabLogin" class="w-1/2 py-3 font-bold text-indigo-600 border-b-2 border-indigo-600">Login</button>
+                <button onclick="switchAuthTab('register')" id="tabRegister" class="w-1/2 py-3 font-bold text-slate-400 hover:text-slate-600">Register</button>
+            </div>
+            <div id="loginForm" class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Session ID / Email</label>
+                    <input type="email" id="loginEmail" placeholder="admin@toko.com" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded text-sm focus:ring-1 focus:ring-indigo-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Password</label>
+                    <input type="password" id="loginPass" placeholder="••••••••" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded text-sm focus:ring-1 focus:ring-indigo-500 outline-none transition">
+                </div>
+                <button onclick="handleLogin()" class="w-full bg-indigo-600 text-white font-bold py-2.5 rounded hover:bg-indigo-700 transition">Initialize Session</button>
+            </div>
+            <div id="registerForm" class="space-y-4 hidden">
+                <input type="text" id="regName" placeholder="Full Name" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded text-sm">
+                <input type="email" id="regEmail" placeholder="Email Address" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded text-sm">
+                <input type="password" id="regPass" placeholder="Create Password" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded text-sm">
+                <button onclick="handleRegister()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded hover:bg-black transition">Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="aboutModal" class="fixed inset-0 bg-slate-900/60 z-[70] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl w-full max-w-lg p-8 relative shadow-2xl">
+            <button onclick="toggleModal('aboutModal')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            <h2 class="text-xl font-bold text-slate-900 mb-1">Model Architecture</h2>
+            <p class="text-xs text-slate-500 mb-6 uppercase tracking-wider">K-Means Clustering Implementation</p>
+            
+            <div class="space-y-6">
+                <div class="flex gap-4">
+                    <div class="w-10 h-10 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-database"></i></div>
+                    <div>
+                        <h4 class="font-bold text-sm text-slate-800">Dataset & Preprocessing</h4>
+                        <ul class="text-xs text-slate-600 mt-1 space-y-1 list-disc ml-4">
+                            <li>Source: UCI Online Retail / Synthetic Generator</li>
+                            <li>Size: ~5000 User Transactions</li>
+                            <li>Cleaning: Log Transformation (Monetary), Outlier Removal</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="w-10 h-10 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-filter"></i></div>
+                    <div>
+                        <h4 class="font-bold text-sm text-slate-800">Feature Engineering (RFM+)</h4>
+                        <ul class="text-xs text-slate-600 mt-1 space-y-1 list-disc ml-4">
+                            <li><strong>Recency:</strong> Days since last active</li>
+                            <li><strong>Frequency:</strong> Total transactions count</li>
+                            <li><strong>Monetary:</strong> Total spending (Log scaled)</li>
+                            <li><strong>Behavior:</strong> Page Views, Cart-to-View Ratio</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="w-10 h-10 rounded bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-microchip"></i></div>
+                    <div>
+                        <h4 class="font-bold text-sm text-slate-800">Algorithm Configuration</h4>
+                        <ul class="text-xs text-slate-600 mt-1 space-y-1 list-disc ml-4">
+                            <li>Model: <strong>K-Means++</strong></li>
+                            <li>Clusters (K): 4 (Derived via Elbow Method)</li>
+                            <li>Scaler: StandardScaler (Z-score normalization)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="insightsModal" class="fixed inset-0 bg-slate-900/80 z-[70] hidden flex items-center justify-center backdrop-blur-md">
+        <div class="bg-white rounded-xl w-full max-w-5xl p-6 relative shadow-2xl h-[90vh] overflow-y-auto">
+            <button onclick="toggleModal('insightsModal')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+                <div class="md:col-span-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Centroid Analysis</h3>
+                            <p class="text-xs text-slate-500">Feature footprint comparison (Scaled Data)</p>
+                        </div>
+                    </div>
+                    <div class="h-80 w-full relative border border-slate-100 rounded-xl p-2 bg-slate-50/50">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><i class="fa-solid fa-table"></i> Cluster Profiling (Real Values)</h4>
+                        <div class="overflow-x-auto rounded-lg border border-slate-200">
+                            <table class="w-full text-xs text-left text-slate-600">
+                                <thead class="text-[10px] text-slate-500 uppercase bg-slate-50 font-bold">
+                                    <tr>
+                                        <th class="px-4 py-3">Persona</th>
+                                        <th class="px-4 py-3 text-right">Avg. Monetary</th>
+                                        <th class="px-4 py-3 text-right">Avg. Freq</th>
+                                        <th class="px-4 py-3 text-right">Avg. Recency</th>
+                                        <th class="px-4 py-3 text-right">Avg. Views</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="profileTableBody" class="bg-white divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="md:col-span-4 space-y-6">
+                    <div class="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
+                        <h4 class="font-bold text-sm mb-4 text-center">Cluster Distribution</h4>
+                        <div class="h-48 relative">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-sm mb-2">Evaluation Metrics</h4>
+                        <div class="space-y-2">
+                            <div class="bg-slate-50 p-3 rounded border border-slate-200 flex justify-between items-center">
+                                <span class="text-xs text-slate-500 font-medium uppercase">Silhouette Score</span>
+                                <span id="valSil" class="text-sm font-mono font-bold text-indigo-600">-</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded border border-slate-200 flex justify-between items-center">
+                                <span class="text-xs text-slate-500 font-medium uppercase">Inertia (SSE)</span>
+                                <span id="valInertia" class="text-sm font-mono font-bold text-slate-700">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-5 sticky top-24">
+                    <div class="mb-5 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide">Input Parameters</h3>
+                        <button onclick="resetSimulator()" class="text-[10px] font-bold text-slate-400 hover:text-indigo-600 border border-slate-200 px-2 py-1 rounded hover:border-indigo-600 transition">RESET</button>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div class="border-l-2 border-indigo-500 pl-3">
+                            <h4 class="text-[10px] font-bold text-indigo-600 uppercase mb-3">Financial Metrics</h4>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-xs font-medium text-slate-600 flex justify-between">
+                                        Monetary <span id="valMoney" class="font-mono text-slate-900">$1000</span>
+                                    </label>
+                                    <input type="range" id="inMoney" min="10" max="10000" step="50" value="1000" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer slider-thumb mt-1">
+                                    <p class="text-[10px] text-slate-400 mt-1">Total spending (last 30 days)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-l-2 border-emerald-500 pl-3">
+                            <h4 class="text-[10px] font-bold text-emerald-600 uppercase mb-3">Engagement Metrics</h4>
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 block mb-1">FREQUENCY</label>
+                                    <input type="number" id="inFreq" value="5" min="1" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-xs font-mono focus:border-indigo-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 block mb-1">RECENCY</label>
+                                    <input type="number" id="inRec" value="30" min="0" max="365" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-xs font-mono focus:border-indigo-500 outline-none">
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-xs font-medium text-slate-600 flex justify-between">
+                                        Page Views <span id="valViews" class="font-mono text-slate-900">50</span>
+                                    </label>
+                                    <input type="range" id="inViews" min="1" max="500" value="50" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer slider-thumb mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-slate-600 flex justify-between">
+                                        Add to Cart <span id="valCart" class="font-mono text-slate-900">15</span>
+                                    </label>
+                                    <input type="range" id="inCart" min="0" max="50" value="15" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer slider-thumb mt-1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-100">
+                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                <div><label class="text-[10px] text-slate-400 block">Avg Items</label><input type="number" id="inAvg" value="3.5" step="0.1" class="w-full p-1.5 text-xs border rounded bg-slate-50"></div>
+                                <div><label class="text-[10px] text-slate-400 block">Wishlist</label><input type="number" id="inWish" value="2" class="w-full p-1.5 text-xs border rounded bg-slate-50"></div>
+                            </div>
+                            <button onclick="getPrediction()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-md transition text-xs uppercase tracking-wide">
+                                <i class="fa-solid fa-gears mr-1"></i> Predict Cluster
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-6">
+                
+                <div id="resultState" class="hidden">
+                    <div class="bg-white rounded-lg border border-slate-200 p-6 mb-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-full -mr-4 -mt-4"></div>
+                        <div class="flex items-start gap-5 relative z-10">
+                            <div id="personaIcon" class="h-16 w-16 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 text-3xl border border-indigo-100">
                                 <i class="fa-solid fa-user"></i>
                             </div>
-                            <div>
-                                <div class="text-xs text-gray-500 uppercase font-bold">AI Detected Persona</div>
-                                <div id="personaResult" class="text-3xl font-bold text-gray-900">Loading...</div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Classification Result</h2>
+                                        <h1 id="personaResult" class="text-3xl font-bold text-slate-900">Loading...</h1>
+                                    </div>
+                                    <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded border border-emerald-200">CONFIDENCE: HIGH</span>
+                                </div>
+                                
+                                <div class="mt-4 bg-slate-50 rounded border border-slate-200 p-4">
+                                    <h4 class="text-xs font-bold text-slate-700 mb-2 uppercase flex items-center gap-2">
+                                        <i class="fa-solid fa-magnifying-glass-chart"></i> Feature Reasoning
+                                    </h4>
+                                    <ul id="explainList" class="space-y-2 text-sm text-slate-600">
+                                        <li class="flex items-center gap-2"><i class="fa-solid fa-spinner fa-spin"></i> Processing...</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
-                        <div><span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full">High Confidence</span></div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <h4 class="text-sm font-bold text-gray-700 mb-2"><i class="fa-solid fa-lightbulb text-yellow-500 mr-1"></i> Why this cluster?</h4>
-                        <p id="explainText" class="text-sm text-gray-600">Analyzing...</p>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide">Recommended Items</h3>
+                            <span class="text-[10px] text-slate-400">ML-Based Filtering</span>
+                        </div>
+                        <div id="recGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
                     </div>
                 </div>
 
-                <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-bold text-gray-900 text-lg">Curated Products</h3>
+                <div id="emptyState" class="h-80 flex flex-col items-center justify-center text-center p-8 bg-white rounded-lg border border-dashed border-slate-300">
+                    <div class="bg-slate-50 p-4 rounded-full mb-4">
+                        <i class="fa-solid fa-microchip text-3xl text-slate-300"></i>
                     </div>
-                    <div id="recGrid" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
+                    <h3 class="text-lg font-bold text-slate-900">Model Idle</h3>
+                    <p class="text-xs text-slate-500 max-w-xs mt-1">Configure user behavior parameters and initialize prediction.</p>
                 </div>
-            </div>
 
-            <div id="emptyState" class="h-96 flex flex-col items-center justify-center text-center p-8 bg-white rounded-xl border-2 border-dashed border-gray-200">
-                <div class="bg-gray-50 p-6 rounded-full mb-4"><i class="fa-solid fa-robot text-5xl text-gray-300"></i></div>
-                <h3 class="text-xl font-bold text-gray-900">Ready to Analyze</h3>
+                <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                        <h3 class="font-bold text-slate-700 text-xs uppercase flex items-center gap-2">
+                            <i class="fa-solid fa-list-ul"></i> Prediction Log
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left text-slate-600">
+                            <thead class="text-[10px] text-slate-400 uppercase bg-white border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-3 font-semibold">Timestamp</th>
+                                    <th class="px-6 py-3 font-semibold">Predicted Cluster</th>
+                                    <th class="px-6 py-3 font-semibold">Input Monetary</th>
+                                    <th class="px-6 py-3 font-semibold">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTable" class="divide-y divide-slate-100">
+                                <tr><td colspan="4" class="px-6 py-4 text-center italic text-slate-400">No session activity yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
-</div>
 
-<script>
-    const API_URL = "http://localhost:8000";
-    let token = localStorage.getItem('access_token');
-    let metricsData = null;
-    let chartInstance = null;
+    <script>
+        const API_URL = "http://localhost:8000";
+        let token = localStorage.getItem('access_token');
+        let userName = localStorage.getItem('user_name');
+        let chartInstance = null;
+        let pieChartInstance = null;
+        let metricsData = null;
+        let sessionLogs = [];
 
-    async function init() {
-        updateAuthUI();
-        setupInterdependentInputs();
-        await fetchMetricsData();
-    }
+        // STRICT CLUSTER NAMES
+        const CLUSTER_NAMES = ["Newbie", "Window Shopper", "Loyalist", "Sultan"];
 
-    async function fetchMetricsData() {
-        try {
-            const res = await fetch(`${API_URL}/cluster/metrics`);
-            if(res.ok) metricsData = await res.json();
-        } catch {}
-    }
-
-    function updateAuthUI() {
-        const btnArea = document.getElementById('authBtnArea');
-        if(!btnArea) return;
-
-        if(token) {
-            btnArea.innerHTML = `
-                <button onclick="logout()" class="text-red-500 text-xs font-bold border border-red-100 bg-red-50 px-3 py-1.5 rounded">Logout</button>
-            `;
-        } else {
-            btnArea.innerHTML = `
-                <button onclick="toggleModal('authModal')" class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold">Sign In</button>
-            `;
+        function init() {
+            updateAuthUI();
+            setupInterdependentInputs();
+            fetchMetricsData();
         }
-    }
 
-    function setupInterdependentInputs() {
-        const inMoney = document.getElementById('inMoney');
-        const inViews = document.getElementById('inViews');
-        const inCart = document.getElementById('inCart');
+        function updateAuthUI() {
+            const btnArea = document.getElementById('authBtnArea');
+            if(!btnArea) return;
+            if(token) {
+                const initial = userName ? userName.charAt(0).toUpperCase() : 'U';
+                btnArea.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2 text-right">
+                            <div class="h-8 w-8 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs border border-indigo-100">${initial}</div>
+                            <div class="hidden sm:block">
+                                <div class="text-[10px] text-slate-400 font-bold uppercase">Session Active</div>
+                                <div class="text-xs font-bold text-slate-900 truncate w-20">${userName || 'User'}</div>
+                            </div>
+                        </div>
+                        <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition ml-2" title="End Session"><i class="fa-solid fa-power-off"></i></button>
+                    </div>`;
+            } else {
+                btnArea.innerHTML = `<button onclick="toggleModal('authModal')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">AUTHENTICATE</button>`;
+            }
+        }
 
-        inMoney.addEventListener('input', (e) => document.getElementById('valMoney').innerText = '$' + e.target.value);
-        inViews.addEventListener('input', (e) => {
-            const val = parseInt(e.target.value);
-            document.getElementById('valViews').innerText = val;
-            inCart.max = val;
-        });
-        inCart.addEventListener('input', (e) => document.getElementById('valCart').innerText = e.target.value);
-    }
+        async function handleLogin() {
+            const e = document.getElementById('loginEmail').value;
+            const p = document.getElementById('loginPass').value;
+            if(!e || !p) return showToast('Input required', 'error');
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:e, password:p})});
+                if(res.ok) { 
+                    const d=await res.json(); 
+                    localStorage.setItem('access_token', d.access_token); 
+                    localStorage.setItem('user_name', e.split('@')[0]);
+                    token=d.access_token; 
+                    location.reload(); 
+                } else showToast('Authentication Failed', 'error');
+            } catch(e){ showToast('Connection Error', 'error'); }
+        }
 
-    async function getPrediction() {
-        if(!token) { toggleModal('authModal'); showToast('Please login first', 'error'); return; }
+        async function handleRegister() {
+            const n = document.getElementById('regName').value;
+            const e = document.getElementById('regEmail').value;
+            const p = document.getElementById('regPass').value;
+            if(!n || !e || !p) return showToast('Input required', 'error');
+            try {
+                const res = await fetch(`${API_URL}/auth/register`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:e, password:p, name:n})});
+                if(res.ok) { showToast('Account Created', 'success'); switchAuthTab('login'); }
+                else { const d=await res.json(); showToast(d.detail || 'Failed', 'error'); }
+            } catch(e){ showToast('Error', 'error'); }
+        }
 
-        const payload = {
-            Monetary: parseFloat(inMoney.value),
-            Frequency: parseInt(inFreq.value),
-            Recency: parseInt(inRec.value),
-            Page_Views: parseInt(inViews.value),
-            Add_to_Cart_Count: parseInt(inCart.value),
-            Avg_Items: parseFloat(inAvg.value),
-            Wishlist_Count: parseInt(inWish.value),
-            Unique_Products: Math.max(1, Math.ceil(parseInt(inFreq.value) * 0.6))
-        };
-
-        emptyState.classList.add('hidden');
-        resultState.classList.remove('hidden');
-        personaResult.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-orange-500"></i>';
-
-        try {
-            const res = await fetch(`${API_URL}/recommend/user`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(payload)
+        function setupInterdependentInputs() {
+            const inMoney = document.getElementById('inMoney');
+            const inViews = document.getElementById('inViews');
+            const inCart = document.getElementById('inCart');
+            inMoney.addEventListener('input', (e) => document.getElementById('valMoney').innerText = '$' + e.target.value);
+            inViews.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value);
+                document.getElementById('valViews').innerText = val;
+                inCart.max = val; 
+                if(parseInt(inCart.value) > val) { inCart.value = val; document.getElementById('valCart').innerText = val; }
             });
+            inCart.addEventListener('input', (e) => document.getElementById('valCart').innerText = e.target.value);
+        }
 
-            if(res.ok) renderResults(await res.json(), payload);
-        } catch {}
-    }
+        function resetSimulator() {
+            document.getElementById('inMoney').value = 1000; document.getElementById('valMoney').innerText = "$1000";
+            document.getElementById('inFreq').value = 5; document.getElementById('inRec').value = 30;
+            document.getElementById('inViews').value = 50; document.getElementById('valViews').innerText = 50;
+            document.getElementById('inCart').value = 15; document.getElementById('valCart').innerText = 15;
+            showToast('Parameters Reset', 'info');
+        }
 
-    function renderResults(data, input) {
-        const clusters = ["Newbie (Hemat)", "Window Shopper", "Loyalist", "Sultan (High Spender)"];
-        const icons = ["fa-seedling", "fa-eye", "fa-handshake", "fa-crown"];
+        async function getPrediction() {
+            if(!token) { toggleModal('authModal'); showToast('Authentication Required', 'error'); return; }
 
-        personaResult.innerText = clusters[data.cluster];
-        personaIcon.innerHTML = `<i class="fa-solid ${icons[data.cluster]}"></i>`;
-        explainText.innerHTML = `User dikategorikan sebagai <b>${clusters[data.cluster]}</b> karena Monetary <b>$${input.Monetary}</b> dan Recency <b>${input.Recency} hari</b>.`;
+            const payload = {
+                Monetary: parseFloat(document.getElementById('inMoney').value),
+                Frequency: parseInt(document.getElementById('inFreq').value),
+                Recency: parseInt(document.getElementById('inRec').value),
+                Page_Views: parseInt(document.getElementById('inViews').value),
+                Add_to_Cart_Count: parseInt(document.getElementById('inCart').value),
+                Avg_Items: parseFloat(document.getElementById('inAvg').value),
+                Wishlist_Count: parseInt(document.getElementById('inWish').value),
+                Unique_Products: Math.max(1, Math.round(parseInt(document.getElementById('inFreq').value) * 0.5)) // Fix Logic
+            };
 
-        recGrid.innerHTML = data.recommendations.map(item => {
-            return `
-                <div class="bg-white rounded-lg p-3 border hover:shadow-md transition">
-                    <div class="h-32 bg-gray-100 rounded mb-3">
-                        <img src="https://picsum.photos/seed/${item.product_id}/200/200" class="w-full h-full object-cover rounded">
+            // VALIDATION
+            if(payload.Frequency <= 0) return showToast('Frequency must be > 0', 'error');
+            if(payload.Recency < 0) return showToast('Recency cannot be negative', 'error');
+
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('resultState').classList.remove('hidden');
+            document.getElementById('recGrid').innerHTML = Array(3).fill('<div class="h-40 bg-slate-100 rounded-lg shimmer"></div>').join('');
+
+            try {
+                const res = await fetch(`${API_URL}/recommend/user`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload)
+                });
+
+                if(res.ok) {
+                    const data = await res.json();
+                    renderResults(data, payload);
+                    addToHistory(data.cluster, payload.Monetary);
+                    showToast('Analysis Completed', 'success');
+                } else {
+                    if(res.status === 401) logout(); else showToast('Prediction Error', 'error');
+                }
+            } catch(e) { showToast('Server Unreachable', 'error'); }
+        }
+
+        function renderResults(data, input) {
+            const icons = ["fa-seedling", "fa-binoculars", "fa-handshake", "fa-crown"];
+            const clusterName = CLUSTER_NAMES[data.cluster];
+            
+            document.getElementById('personaResult').innerText = clusterName;
+            document.getElementById('personaIcon').innerHTML = `<i class="fa-solid ${icons[data.cluster]}"></i>`;
+            
+            // EXPLAINABILITY LOGIC (Strict)
+            let reasons = [];
+            const avgMonetary = metricsData ? metricsData.centroids_real[data.cluster].Monetary : 1000;
+            const avgFreq = metricsData ? metricsData.centroids_real[data.cluster].Frequency : 10;
+
+            // 1. Financial Reasoning
+            if(input.Monetary > avgMonetary) reasons.push(`<li class="flex items-start gap-2 text-indigo-700 font-medium"><i class="fa-solid fa-chart-line mt-1"></i> <span>Spending capacity <b>($${input.Monetary})</b> exceeds cluster average. High value target.</span></li>`);
+            else reasons.push(`<li class="flex items-start gap-2"><i class="fa-solid fa-check text-slate-400 mt-1"></i> <span>Monetary value aligns with standard <b>${clusterName}</b> behavior.</span></li>`);
+
+            // 2. Activity Reasoning
+            if(input.Recency < 7) reasons.push(`<li class="flex items-start gap-2 text-emerald-600 font-medium"><i class="fa-solid fa-clock mt-1"></i> <span>User is highly active (Last seen < 1 week).</span></li>`);
+            else if (input.Recency > 60) reasons.push(`<li class="flex items-start gap-2 text-amber-600"><i class="fa-solid fa-triangle-exclamation mt-1"></i> <span>Dormant user risk (> 60 days inactive).</span></li>`);
+            else reasons.push(`<li class="flex items-start gap-2"><i class="fa-solid fa-check text-slate-400 mt-1"></i> <span>Activity level is normal.</span></li>`);
+
+            // 3. Pattern Reasoning
+            if(data.cluster === 1) reasons.push(`<li class="flex items-start gap-2 text-blue-600"><i class="fa-solid fa-eye mt-1"></i> <span>High View-to-Cart ratio detected (Browsing intent > Buying intent).</span></li>`);
+            
+            document.getElementById('explainList').innerHTML = reasons.join('');
+
+            // PRODUCTS
+            document.getElementById('recGrid').innerHTML = data.recommendations.map(item => {
+                const badge = getCategoryStyle(item.category);
+                const price = item.price || (Math.floor(Math.random() * 200) + 20); // Dummy for UI
+                const rating = (Math.random() * (5.0 - 4.0) + 4.0).toFixed(1); // Dummy for UI
+                
+                return `
+                <div class="bg-white rounded-lg border border-slate-100 p-4 hover:shadow-lg transition group">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-bold px-2 py-1 rounded ${badge.bg} ${badge.text} uppercase tracking-wider">${item.category}</span>
+                        <div class="flex items-center gap-1 text-amber-400 text-xs"><i class="fa-solid fa-star"></i> <span class="text-slate-600 font-bold">${rating}</span></div>
                     </div>
-                    <h4 class="font-bold text-sm mt-2 truncate">${item.name}</h4>
-                </div>
-            `;
-        }).join('');
-    }
+                    <div class="h-24 bg-slate-50 rounded mb-3 flex items-center justify-center text-slate-300">
+                        <img src="https://picsum.photos/seed/${item.product_id}/200/200" class="w-full h-full object-cover rounded opacity-80 group-hover:opacity-100 transition">
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-sm leading-tight mb-2 line-clamp-1" title="${item.name}">${item.name}</h4>
+                    <div class="flex justify-between items-center pt-3 border-t border-slate-50">
+                        <span class="font-bold text-slate-900">$${price}</span>
+                        <button class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase">Details <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
 
-    function getColor(i) { return ['107, 114, 128', '59, 130, 246', '16, 185, 129', '245, 158, 11'][i]; }
+        function addToHistory(cluster, money) {
+            const time = new Date().toLocaleTimeString();
+            const badgeColor = cluster === 3 ? "text-purple-700 bg-purple-50 border-purple-100" : "text-slate-600 bg-slate-100 border-slate-200";
+            const row = `
+                <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                    <td class="px-6 py-3 font-mono text-xs text-slate-500">${time}</td>
+                    <td class="px-6 py-3"><span class="text-[10px] font-bold px-2 py-0.5 rounded border ${badgeColor}">${CLUSTER_NAMES[cluster]}</span></td>
+                    <td class="px-6 py-3 font-bold text-slate-700">$${money}</td>
+                    <td class="px-6 py-3"><span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Logged</span></td>
+                </tr>`;
+            const tbody = document.getElementById('historyTable');
+            if(sessionLogs.length === 0) tbody.innerHTML = '';
+            tbody.innerHTML = row + tbody.innerHTML;
+            sessionLogs.push(1);
+        }
 
-    async function showModelInsights() {
-        if(!metricsData) await fetchMetricsData();
-        if(!metricsData) return showToast('Metrics not ready', 'error');
+        function getCategoryStyle(cat) {
+            const c = (cat || "").toLowerCase();
+            if(c.includes('elect')) return {bg:'bg-blue-50', text:'text-blue-700'};
+            if(c.includes('fash')) return {bg:'bg-pink-50', text:'text-pink-700'};
+            if(c.includes('home')) return {bg:'bg-emerald-50', text:'text-emerald-700'};
+            return {bg:'bg-slate-100', text:'text-slate-600'};
+        }
 
-        toggleModal('insightsModal');
-        clusterProfiles.innerHTML = metricsData.centroids_real.map((c, i) => `
-            <div class="p-3 bg-gray-50 rounded border">
-                <div class="font-bold text-orange-600 text-xs mb-1">Cluster ${i} (${metricsData.cluster_names[i]})</div>
-                <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                    <div>Money: $${Math.round(c.Monetary)}</div>
-                    <div>Freq: ${Math.round(c.Frequency)}</div>
-                    <div>Recency: ${Math.round(c.Recency)}</div>
-                    <div>Views: ${Math.round(c.Page_Views)}</div>
-                </div>
-            </div>
-        `).join('');
+        async function fetchMetricsData() {
+            try {
+                const res = await fetch(`${API_URL}/cluster/metrics`);
+                if(res.ok) metricsData = await res.json();
+            } catch(e) {}
+        }
 
-        const ctx = document.getElementById('radarChart').getContext('2d');
-        if(chartInstance) chartInstance.destroy();
+        function showModelInsights() {
+            if(!metricsData) { 
+                fetchMetricsData().then(() => {
+                    if(!metricsData) showToast('Model metrics initializing...', 'info');
+                    else openMetricsModal();
+                });
+            } else openMetricsModal();
+        }
 
-        chartInstance = new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: metricsData.feature_readable,
-                datasets: metricsData.centroids_scaled.map((d, i) => ({
-                    label: metricsData.cluster_names[i],
-                    data: d,
-                    fill: true,
-                    backgroundColor: `rgba(${getColor(i)},0.2)`,
-                    borderColor: `rgba(${getColor(i)},1)`
-                }))
-            },
-            options: { scales:{r:{suggestedMin:-1,suggestedMax:3}} }
-        });
-    }
+        function openMetricsModal() {
+            toggleModal('insightsModal');
+            document.getElementById('profileTableBody').innerHTML = metricsData.centroids_real.map((c, i) => `
+                <tr class="hover:bg-slate-50 border-b border-slate-50">
+                    <td class="px-4 py-3 font-bold text-indigo-600 text-[10px] uppercase">${CLUSTER_NAMES[i]}</td>
+                    <td class="px-4 py-3 text-right font-mono text-slate-600">$${Math.round(c.Monetary)}</td>
+                    <td class="px-4 py-3 text-right font-mono text-slate-600">${Math.round(c.Frequency)}</td>
+                    <td class="px-4 py-3 text-right font-mono text-slate-600">${Math.round(c.Recency)}d</td>
+                    <td class="px-4 py-3 text-right font-mono text-slate-600">${Math.round(c.Page_Views)}</td>
+                </tr>`).join('');
+            
+            // STATS
+            document.getElementById('valSil').innerText = metricsData.silhouette_score;
+            document.getElementById('valInertia').innerText = Math.round(metricsData.inertia);
 
-    function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
-
-    function showToast(msg, type='info') {
-        const t = document.createElement('div');
-        t.className = `px-6 py-3 rounded-lg text-white shadow-lg mb-2 text-sm transform transition translate-x-full opacity-0 ${type=='error'?'bg-red-500':'bg-gray-800'}`;
-        t.innerText = msg;
-        toastContainer.appendChild(t);
-        setTimeout(() => t.classList.remove('translate-x-full', 'opacity-0'), 10);
-        setTimeout(() => t.remove(), 3000);
-    }
-
-    async function handleLogin() {
-        const e = loginEmail.value;
-        const p = loginPass.value;
-        try {
-            const res = await fetch(`${API_URL}/auth/login`, {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({email:e, password:p})
+            // PIE CHART
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            if(pieChartInstance) pieChartInstance.destroy();
+            const counts = Object.values(metricsData.cluster_counts);
+            // COLORS: Distinct High Contrast
+            const pieColors = ['#94a3b8', '#3b82f6', '#10b981', '#f59e0b']; // Gray, Blue, Green, Orange
+            
+            pieChartInstance = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: { labels: CLUSTER_NAMES, datasets: [{ data: counts, backgroundColor: pieColors, borderWidth: 0 }] },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } }, cutout: '70%' }
             });
-            if(res.ok) {
-                const d=await res.json();
-                localStorage.setItem('access_token', d.access_token);
-                token=d.access_token;
-                location.reload();
-            }
-        } catch {}
-    }
 
-    async function handleRegister() {
-        const n = regName.value;
-        const e = regEmail.value;
-        const p = regPass.value;
-        try {
-            const res = await fetch(`${API_URL}/auth/register`, {
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({name:n,email:e,password:p})
+            // RADAR CHART
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: metricsData.feature_readable,
+                    datasets: metricsData.centroids_scaled.map((d, i) => ({
+                        label: CLUSTER_NAMES[i], data: d, fill: false,
+                        backgroundColor: 'transparent', borderColor: pieColors[i], borderWidth: 2, pointRadius: 0
+                    }))
+                },
+                options: { scales: { r: { suggestedMin: -1, suggestedMax: 3, ticks: { display: false } } }, plugins: { legend: { display: false } } }
             });
-            if(res.ok) {
-                showToast('Registered!');
-                toggleModal('authModal');
-            }
-        } catch {}
-    }
+        }
 
-    function logout() {
-        localStorage.removeItem('access_token');
-        location.reload();
-    }
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+        function showToast(msg, type='info') {
+            const t = document.createElement('div');
+            const c = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-red-500' : 'bg-slate-800');
+            t.className = `${c} text-white px-4 py-3 rounded shadow-lg flex items-center gap-3 text-xs font-bold transform transition-all duration-300 translate-x-full opacity-0`;
+            t.innerHTML = `<i class="fa-solid ${type==='success'?'fa-check':'fa-info-circle'}"></i> ${msg}`;
+            document.getElementById('toastContainer').appendChild(t);
+            setTimeout(() => t.classList.remove('translate-x-full', 'opacity-0'), 10);
+            setTimeout(() => t.remove(), 3000);
+        }
+        function logout() { localStorage.clear(); location.reload(); }
+        function switchAuthTab(t) {
+            document.getElementById('loginForm').classList.toggle('hidden', t!=='login');
+            document.getElementById('registerForm').classList.toggle('hidden', t==='login');
+            document.getElementById('tabLogin').className = t==='login' ? "w-1/2 py-3 font-bold text-indigo-600 border-b-2 border-indigo-600" : "w-1/2 py-3 font-bold text-slate-400";
+            document.getElementById('tabRegister').className = t!=='login' ? "w-1/2 py-3 font-bold text-indigo-600 border-b-2 border-indigo-600" : "w-1/2 py-3 font-bold text-slate-400";
+        }
 
-    function switchAuthTab(t) {
-        loginForm.classList.toggle('hidden', t!=='login');
-        registerForm.classList.toggle('hidden', t==='login');
-        tabLogin.className = t==='login' ? "w-1/2 py-3 font-bold text-orange-600 border-b-2 border-orange-600" : "w-1/2 py-3 font-bold text-gray-400";
-        tabRegister.className = t!=='login' ? "w-1/2 py-3 font-bold text-orange-600 border-b-2 border-orange-600" : "w-1/2 py-3 font-bold text-gray-400";
-    }
-
-    init();
-</script>
-
+        init();
+    </script>
 </body>
 </html>
