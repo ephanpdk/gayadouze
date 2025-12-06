@@ -1,5 +1,5 @@
 <script>
-    const API = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' ? 'http://127.0.0.1:8000' : '';
+    const API = "http://127.0.0.1:8000";
     const CLUSTERS = ["Newbie", "Window Shopper", "Loyalist", "Sultan"];
     const THEMES = [
         { bg: "bg-slate-50", border: "border-slate-200", text: "text-slate-700", icon: "fa-seedling", color: "text-slate-400" },
@@ -17,12 +17,63 @@
     function init() {
         renderAuth();
         bindSliders();
-        loadMetrics();
+        loadMetrics(); // Pre-load metrics silently
+        
         const savedLogs = localStorage.getItem('sessionLogs');
-        if(savedLogs) { JSON.parse(savedLogs).forEach(l => addLogToTable(l.cluster, l.money, l.time)); }
+        if(savedLogs) { 
+            try {
+                sessionLogs = JSON.parse(savedLogs);
+                const table = document.getElementById('log-table');
+                if(sessionLogs.length > 0 && table) {
+                    table.innerHTML = '';
+                    sessionLogs.forEach(l => {
+                        const row = `<tr class="hover:bg-slate-50 transition border-b border-slate-50"><td class="px-6 py-2 text-xs text-slate-400 font-mono">${l.time}</td><td class="px-6 py-2 text-xs font-bold ${THEMES[l.cluster].text}">${CLUSTERS[l.cluster]}</td><td class="px-6 py-2 text-xs text-right font-bold text-slate-600">$${l.money}</td><td class="px-6 py-2 text-center"><i class="fa-solid fa-check text-emerald-500 text-xs"></i></td></tr>`;
+                        table.innerHTML += row;
+                    });
+                }
+            } catch(e) {}
+        }
     }
 
-    // --- MODAL & AUTH SYSTEM ---
+    // --- NAVIGATION LOGIC FIXED ---
+    function switchView(viewName) {
+        // 1. Hide all views
+        ['view-dashboard', 'view-insights', 'view-pipeline'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.classList.add('hidden');
+        });
+        
+        // 2. Show target view
+        const target = document.getElementById(`view-${viewName}`);
+        if(target) target.classList.remove('hidden');
+
+        // 3. Reset Nav Buttons
+        ['nav-dashboard', 'nav-insights', 'nav-pipeline'].forEach(id => {
+            const btn = document.getElementById(id);
+            if(btn) btn.className = "px-4 py-1.5 rounded-md text-xs font-bold text-slate-500 hover:text-slate-700 transition flex items-center gap-2";
+        });
+
+        // 4. Active Nav Style
+        const activeBtn = document.getElementById(`nav-${viewName}`);
+        if(activeBtn) {
+            activeBtn.className = "px-4 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2 bg-indigo-600 text-white shadow-md";
+        } else if (viewName === 'dashboard') {
+             const dashBtn = document.getElementById('nav-dashboard');
+             if(dashBtn) dashBtn.className = "px-4 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2 bg-white text-indigo-600 shadow-sm";
+        }
+
+        // 5. Trigger Data Render for Insights
+        if(viewName === 'insights') {
+            if(!metrics) {
+                loadMetrics().then(() => {
+                    setTimeout(renderCharts, 100); 
+                });
+            } else {
+                setTimeout(renderCharts, 50); 
+            }
+        }
+    }
+
     function toggleModal(id) { 
         if(id === 'specsModal') { switchView('pipeline'); return; }
         if(id === 'aboutModal') { switchView('pipeline'); return; }
@@ -32,116 +83,127 @@
         el.classList.toggle('hidden');
     }
 
+    function showInsights() { switchView('insights'); }
+
+    // --- CHART RENDERING FIXED ---
+    async function loadMetrics() {
+        try {
+            const res = await fetch(`${API}/cluster/metrics`);
+            if(res.ok) metrics = await res.json();
+        } catch(e) { console.error("Metrics error", e); }
+    }
+
+    function renderCharts() {
+        if(!metrics || !metrics.elbow_curve) return;
+
+        // Update Text
+        const silEl = document.getElementById('valSil');
+        const inertiaEl = document.getElementById('valInertia');
+        if(silEl) silEl.innerText = metrics.silhouette_score;
+        if(inertiaEl) inertiaEl.innerText = Math.round(metrics.inertia);
+
+        // 1. ELBOW
+        const ctxElbow = document.getElementById('chart-elbow');
+        if(ctxElbow) {
+            if(elbowChartInstance) elbowChartInstance.destroy();
+            elbowChartInstance = new Chart(ctxElbow.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: Object.keys(metrics.elbow_curve),
+                    datasets: [{ label: 'Inertia', data: Object.values(metrics.elbow_curve), borderColor: '#4f46e5', tension: 0.3, pointBackgroundColor: '#4f46e5' }]
+                },
+                options: { maintainAspectRatio: false, plugins: {legend:{display:false}}, scales:{x:{grid:{display:false}}, y:{grid:{color:'#f1f5f9'}}} }
+            });
+        }
+
+        // 2. PIE
+        const ctxPie = document.getElementById('chart-pie');
+        if(ctxPie) {
+            if(pieChartInstance) pieChartInstance.destroy();
+            pieChartInstance = new Chart(ctxPie.getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: CLUSTERS, datasets: [{ data: Object.values(metrics.cluster_counts), backgroundColor: ['#94a3b8', '#3b82f6', '#10b981', '#f59e0b'], borderWidth:0 }] },
+                options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels:{usePointStyle:true, font:{size:10}} } } }
+            });
+        }
+
+        // 3. RADAR
+        const ctxRadar = document.getElementById('chart-radar');
+        if(ctxRadar) {
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctxRadar.getContext('2d'), {
+                type: 'radar',
+                data: { labels: metrics.feature_readable, datasets: metrics.centroids_scaled.map((d, i) => ({ label: CLUSTERS[i], data: d, borderColor: ['#94a3b8', '#3b82f6', '#10b981', '#f59e0b'][i], fill: false, borderWidth: 2, pointRadius: 0 })) },
+                options: { scales: { r: { suggestedMin: -1, suggestedMax: 3, ticks: {display:false}, grid: {color:'#f1f5f9'} } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // 4. TABLE
+        const tableBody = document.getElementById('table-centroids');
+        if(tableBody) {
+             tableBody.innerHTML = metrics.centroids_real.map((c, i) => `
+                <tr class="hover:bg-slate-50 border-b border-slate-50">
+                    <td class="px-6 py-2 font-bold text-[10px] uppercase ${THEMES[i].text}">${CLUSTERS[i]}</td>
+                    <td class="px-6 py-2 text-right font-mono text-[10px]">$${Math.round(c.Monetary)}</td>
+                    <td class="px-6 py-2 text-right font-mono text-[10px]">${Math.round(c.Frequency)}</td>
+                    <td class="px-6 py-2 text-right font-mono text-[10px]">${Math.round(c.Recency)}d</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    // --- UTILS (Auth, Toast, etc) ---
     function renderAuth() {
         const area = document.getElementById('auth-section');
         if(!area) return;
-
         if(token) {
             const init = user ? user[0].toUpperCase() : 'U';
-            area.innerHTML = `<div class="flex items-center gap-3 ml-4 pl-4 border-l border-slate-200"><div class="text-right hidden sm:block"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active</div><div class="text-xs font-bold text-slate-900">${user}</div></div><div class="h-9 w-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs">${init}</div><button onclick="logout()" class="text-slate-400 hover:text-red-500 transition ml-1" title="Logout"><i class="fa-solid fa-power-off"></i></button></div>`;
+            area.innerHTML = `<div class="flex items-center gap-3 ml-4 pl-4 border-l border-slate-200"><div class="text-right hidden sm:block"><div class="text-[10px] font-bold text-slate-400 uppercase">Active</div><div class="text-xs font-bold text-slate-900">${user}</div></div><div class="h-9 w-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs">${init}</div><button onclick="logout()" class="text-slate-400 hover:text-red-500 transition ml-1"><i class="fa-solid fa-power-off"></i></button></div>`;
         } else {
             area.innerHTML = `<button onclick="toggleModal('authModal')" class="ml-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2 rounded-lg transition shadow-lg shadow-indigo-200">LOGIN ACCESS</button>`;
         }
     }
 
-    function switchAuthTab(type) {
-        document.getElementById('loginForm').classList.toggle('hidden', type !== 'login');
-        document.getElementById('registerForm').classList.toggle('hidden', type === 'login');
-        
-        const tabL = document.getElementById('tabLogin');
-        const tabR = document.getElementById('tabRegister');
-        
-        if (type === 'login') {
-            tabL.className = "flex-1 py-2 text-xs font-bold rounded-md bg-white shadow-sm text-slate-800 transition";
-            tabR.className = "flex-1 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition";
-        } else {
-            tabR.className = "flex-1 py-2 text-xs font-bold rounded-md bg-white shadow-sm text-slate-800 transition";
-            tabL.className = "flex-1 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition";
-        }
-    }
+    async function doAuth(type) {
+        const email = type==='login' ? document.getElementById('loginEmail').value : document.getElementById('regEmail').value;
+        const pass = type==='login' ? document.getElementById('loginPass').value : document.getElementById('regPass').value;
+        const name = type==='register' ? document.getElementById('regName').value : null;
 
-    async function handleLogin() {
-        const e = document.getElementById('loginEmail').value;
-        const p = document.getElementById('loginPass').value;
-        if(!e || !p) return toast('Email & Password required', 'error');
+        if(!email || !pass) return toast('Input required', 'error');
+        const endpoint = type==='login' ? '/auth/login' : '/auth/register';
+        const body = type==='login' ? {email, password: pass} : {email, password: pass, name};
 
         try {
-            const res = await fetch(`${API}/auth/login`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email: e, password: p})
-            });
-
-            if(res.ok) { 
-                const data = await res.json(); 
-                localStorage.setItem('token', data.access_token); 
-                localStorage.setItem('user', e.split('@')[0]); 
-                token = data.access_token; 
-                user = e.split('@')[0];
-                
-                toggleModal('authModal');
-                renderAuth();
-                toast('Login Successful', 'success');
-            } else { 
-                toast('Authentication Failed', 'error'); 
-            }
+            const res = await fetch(`${API}${endpoint}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+            if(res.ok) {
+                if(type==='register') { toast('Account created', 'success'); switchAuthTab('login'); }
+                else { 
+                    const data = await res.json(); 
+                    localStorage.setItem('token', data.access_token); 
+                    localStorage.setItem('user', email.split('@')[0]); 
+                    token = data.access_token; user = email.split('@')[0];
+                    toggleModal('authModal'); renderAuth(); toast('Login Successful', 'success'); 
+                }
+            } else toast('Auth Failed', 'error');
         } catch(e) { toast('Connection Error', 'error'); }
     }
 
-    async function handleRegister() {
-        const n = document.getElementById('regName').value;
-        const e = document.getElementById('regEmail').value;
-        const p = document.getElementById('regPass').value;
-        
-        try {
-            const res = await fetch(`${API}/auth/register`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email: e, password: p, name: n})
-            });
-            if(res.ok) { 
-                toast('Account Created', 'success'); 
-                switchAuthTab('login'); 
-            } else { 
-                toast('Registration Failed', 'error'); 
-            }
-        } catch(e) { toast('Error', 'error'); }
+    function switchAuthTab(type) {
+        document.getElementById('loginForm').classList.toggle('hidden', type !== 'login');
+        document.getElementById('registerForm').classList.toggle('hidden', type === 'login');
+        document.getElementById('tabLogin').className = type==='login' ? "flex-1 py-2 text-xs font-bold rounded-md bg-white shadow-sm text-slate-800 transition" : "flex-1 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition";
+        document.getElementById('tabRegister').className = type!=='login' ? "flex-1 py-2 text-xs font-bold rounded-md bg-white shadow-sm text-slate-800 transition" : "flex-1 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition";
     }
 
-    function logout() { 
-        localStorage.clear(); 
-        token = null; 
-        user = null;
-        renderAuth();
-        toast('Logged Out', 'info');
-    }
-
-    // --- NAVIGATION & LOGIC ---
-    function switchView(viewName) {
-        ['view-dashboard', 'view-insights', 'view-pipeline'].forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.classList.add('hidden');
-        });
-        document.getElementById(`view-${viewName}`).classList.remove('hidden');
-        
-        ['nav-dashboard', 'nav-insights', 'nav-pipeline'].forEach(id => {
-            const btn = document.getElementById(id);
-            if(btn) btn.className = "px-4 py-1.5 rounded-md text-xs font-bold text-slate-500 hover:text-slate-700 transition flex items-center gap-2";
-        });
-
-        const activeBtn = document.getElementById(`nav-${viewName}`);
-        if(activeBtn) activeBtn.className = "px-4 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2 bg-indigo-600 text-white shadow-md";
-        else if (viewName === 'dashboard') document.getElementById('nav-dashboard').className = "px-4 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2 bg-white text-indigo-600 shadow-sm";
-
-        if(viewName === 'insights') {
-            if(!metrics) loadMetrics().then(renderCharts);
-            else setTimeout(renderCharts, 100); 
-        }
-    }
+    function logout() { localStorage.clear(); token=null; user=null; renderAuth(); toast('Logged Out', 'info'); }
 
     function bindSliders() {
-        const updateVal = (id, val, pre='') => document.getElementById(`disp-${id.split('-')[1]}`).innerText = pre + val;
+        const updateVal = (id, val, pre='') => { const el = document.getElementById(`disp-${id.split('-')[1]}`); if(el) el.innerText = pre + val; };
         document.getElementById('in-money').addEventListener('input', (e) => updateVal(e.target.id, e.target.value, '$'));
-        document.getElementById('in-views').addEventListener('input', (e) => { updateVal(e.target.id, e.target.value); const cart=document.getElementById('in-cart'); cart.max=e.target.value; if(parseInt(cart.value)>parseInt(e.target.value)) { cart.value=e.target.value; updateVal('in-cart',e.target.value); } });
+        document.getElementById('in-views').addEventListener('input', (e) => updateVal(e.target.id, e.target.value));
         document.getElementById('in-cart').addEventListener('input', (e) => updateVal(e.target.id, e.target.value));
     }
-    
+
     function resetSim() {
         document.getElementById('in-money').value=1000; document.getElementById('disp-money').innerText='$1000';
         document.getElementById('in-freq').value=5; document.getElementById('in-rec').value=30;
@@ -162,7 +224,6 @@
             Wishlist_Count: parseInt(document.getElementById('in-wish').value),
             Unique_Products: Math.max(1, Math.ceil(parseInt(document.getElementById('in-freq').value)*0.5))
         };
-        if(payload.Frequency <= 0) return toast('Frequency > 0 required', 'error');
 
         document.getElementById('state-idle').classList.add('hidden');
         document.getElementById('state-result').classList.remove('hidden');
@@ -171,11 +232,12 @@
         try {
             const res = await fetch(`${API}/recommend/user`, { method:'POST', headers:{'Content-Type':'application/json', 'Authorization': `Bearer ${token}`}, body:JSON.stringify(payload) });
             if(res.ok) { 
-                const data=await res.json(); renderResult(data); addLog(data.cluster, payload.Monetary); toast('Success', 'success'); 
-            } else { 
-                if(res.status===401) logout(); else toast('Model Error', 'error'); 
-            }
-        } catch(e) { toast('Server Unreachable', 'error'); }
+                const data=await res.json(); 
+                renderResult(data); 
+                addLog(data.cluster, payload.Monetary); 
+                toast('Success', 'success'); 
+            } else { if(res.status===401) logout(); else toast('API Error', 'error'); }
+        } catch(e) { toast('Server Error', 'error'); }
     }
 
     function renderResult(data) {
@@ -188,67 +250,37 @@
         document.getElementById('cluster-icon-box').className = `w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-sm ${theme.bg} ${theme.color}`;
         document.getElementById('hero-card').className = `relative bg-white rounded-2xl border ${theme.border} p-8 overflow-hidden shadow-sm transition-all duration-500 fade-enter`;
 
-        const dist = data.metrics?.distance_to_centroid ?? 0;
-        const conf = data.metrics?.confidence_score ?? 0;
-        document.getElementById('res-dist').innerText = Number(dist).toFixed(4);
-        document.getElementById('res-conf').innerText = conf + '%';
+        document.getElementById('res-dist').innerText = Number(data.metrics?.distance_to_centroid ?? 0).toFixed(4);
+        document.getElementById('res-conf').innerText = (data.metrics?.confidence_score ?? 0) + '%';
+        
+        const drivers = data.metrics?.feature_drivers || [];
+        document.getElementById('driver-list').innerHTML = drivers.length ? drivers.map(d => `<li class="flex items-center gap-2 text-xs text-slate-600"><i class="fa-solid ${d.sentiment==='positive'?'fa-arrow-trend-up text-emerald-500':'fa-arrow-trend-down text-rose-500'}"></i><span class="font-bold">${d.feature}</span><span class="text-slate-400">(${d.description}, Z=${d.score.toFixed(2)})</span></li>`).join('') : '<li class="text-sm text-slate-400 italic">Balanced behavior.</li>';
+        
+        const expl = data.metrics?.explanations || {};
+        document.getElementById('bs-why').innerText = expl.why || "Analyzing...";
+        document.getElementById('bs-compare').innerText = expl.compare || "";
+        document.getElementById('bs-anomaly').innerText = expl.anomaly || "";
 
-        const drivers = data.metrics.feature_drivers || [];
-        const list = document.getElementById('driver-list');
-        list.innerHTML = drivers.length ? drivers.map(d => `<li class="flex items-center gap-2 text-xs text-slate-600"><i class="fa-solid ${d.sentiment==='positive'?'fa-arrow-trend-up text-emerald-500':'fa-arrow-trend-down text-rose-500'}"></i><span class="font-bold">${d.feature}</span><span class="text-slate-400">(${d.description}, Z=${d.score})</span></li>`).join('') : '<li class="text-sm text-slate-400 italic">Balanced behavior.</li>';
-
-        const explanations = data.metrics.explanations || { why: "Analyzing...", compare: "-", anomaly: "-" };
-        document.getElementById('bs-why').innerText = explanations.why;
-        document.getElementById('bs-compare').innerText = explanations.compare;
-        document.getElementById('bs-anomaly').innerText = explanations.anomaly;
-
-        const grid = document.getElementById('product-grid');
-        grid.innerHTML = (data.recommendations || []).map(p => `
-            <div class="group bg-white border border-slate-100 rounded-xl p-4 hover:shadow-xl transition-all duration-300 relative">
-                <div class="h-32 bg-slate-50 rounded-lg mb-4 relative overflow-hidden"><img src="https://picsum.photos/seed/${p.product_id}/300/200" class="w-full h-full object-cover opacity-90 group-hover:scale-110 transition duration-700"><div class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide text-slate-600 shadow-sm">${p.category}</div></div>
-                <div class="flex justify-between items-start mb-2"><h4 class="font-bold text-slate-800 text-sm line-clamp-1">${p.name}</h4></div>
-                <div class="flex items-center gap-1 mb-4"><div class="flex text-amber-400 text-[10px]"><i class="fa-solid fa-star"></i><span class="text-slate-500 ml-1 font-bold">${p.rating}</span></div><span class="text-[10px] text-slate-300 mx-2">•</span><span class="text-[10px] text-slate-400">Match</span></div>
+        document.getElementById('product-grid').innerHTML = (data.recommendations||[]).map(p => `
+            <div class="group bg-white border border-slate-100 rounded-xl p-4 hover:shadow-xl transition-all relative">
+                <div class="h-32 bg-slate-50 rounded-lg mb-4 relative overflow-hidden"><img src="https://picsum.photos/seed/${p.product_id}/300/200" class="w-full h-full object-cover opacity-90"><div class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-[10px] font-bold text-slate-600">${p.category}</div></div>
+                <h4 class="font-bold text-slate-800 text-sm mb-2">${p.name}</h4>
                 <div class="flex justify-between items-center pt-3 border-t border-slate-50"><span class="font-mono font-bold text-slate-900">$${p.price}</span><button class="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 transition shadow-lg active:scale-90"><i class="fa-solid fa-plus text-xs"></i></button></div>
-            </div>
-        `).join('');
+            </div>`).join('');
     }
 
     function addLog(cluster, money) {
         const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        addLogToTable(cluster, money, time);
         let logs = JSON.parse(localStorage.getItem('sessionLogs') || '[]');
         logs.unshift({cluster, money, time});
         if(logs.length > 10) logs.pop();
         localStorage.setItem('sessionLogs', JSON.stringify(logs));
-    }
-    
-    function addLogToTable(cluster, money, time) {
-        const row = `<tr class="hover:bg-slate-50 transition border-b border-slate-50 fade-enter"><td class="px-6 py-2 text-xs font-mono text-slate-400">${time}</td><td class="px-6 py-2 text-xs font-bold ${THEMES[cluster].text}">${CLUSTERS[cluster]}</td><td class="px-6 py-2 text-xs text-right font-bold text-slate-600">$${money}</td><td class="px-6 py-2 text-center"><i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i></td></tr>`;
+        
         const table = document.getElementById('log-table');
-        if(table.innerHTML.includes('No activity')) table.innerHTML='';
-        table.innerHTML = row + table.innerHTML;
-    }
-
-    async function loadMetrics() { try { const res = await fetch(`${API}/cluster/metrics`); if(res.ok) metrics = await res.json(); } catch(e) {} }
-    
-    function renderCharts() {
-        if(!metrics || !metrics.elbow_curve) return;
-        document.getElementById('valSil').innerText = metrics.silhouette_score;
-        document.getElementById('valInertia').innerText = Math.round(metrics.inertia);
-
-        if(elbowChartInstance) elbowChartInstance.destroy();
-        const ctxElbow = document.getElementById('chart-elbow').getContext('2d');
-        elbowChartInstance = new Chart(ctxElbow, { type: 'line', data: { labels: Object.keys(metrics.elbow_curve), datasets: [{ label: 'Inertia', data: Object.values(metrics.elbow_curve), borderColor: '#4f46e5', tension: 0.3, pointBackgroundColor: '#4f46e5' }] }, options: { maintainAspectRatio: false, plugins: {legend:{display:false}}, scales:{x:{grid:{display:false}}, y:{grid:{color:'#f1f5f9'}}} } });
-
-        if(pieChartInstance) pieChartInstance.destroy();
-        const ctxPie = document.getElementById('chart-pie').getContext('2d');
-        pieChartInstance = new Chart(ctxPie, { type: 'doughnut', data: { labels: CLUSTERS, datasets: [{ data: Object.values(metrics.cluster_counts), backgroundColor: ['#94a3b8', '#3b82f6', '#10b981', '#f59e0b'], borderWidth:0 }] }, options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels:{usePointStyle:true} } } } });
-
-        if(chartInstance) chartInstance.destroy();
-        const ctxRadar = document.getElementById('chart-radar').getContext('2d');
-        chartInstance = new Chart(ctxRadar, { type: 'radar', data: { labels: metrics.feature_readable, datasets: metrics.centroids_scaled.map((d, i) => ({ label: CLUSTERS[i], data: d, borderColor: ['#94a3b8', '#3b82f6', '#10b981', '#f59e0b'][i], fill: false, borderWidth: 2, pointRadius: 0 })) }, options: { scales: { r: { suggestedMin: -1, suggestedMax: 3, ticks: {display:false}, grid: {color:'#f1f5f9'} } }, plugins: { legend: { display: false } } } });
-
-        document.getElementById('table-centroids').innerHTML = metrics.centroids_real.map((c, i) => `<tr class="hover:bg-slate-50 border-b border-slate-50"><td class="px-6 py-2 font-bold text-[10px] uppercase ${THEMES[i].text}">${CLUSTERS[i]}</td><td class="px-6 py-2 text-right font-mono text-[10px]">$${Math.round(c.Monetary)}</td><td class="px-6 py-2 text-right font-mono text-[10px]">${Math.round(c.Frequency)}</td><td class="px-6 py-2 text-right font-mono text-[10px]">${Math.round(c.Recency)}d</td></tr>`).join('');
+        if(table) {
+            if(table.innerHTML.includes('No activity')) table.innerHTML = '';
+            table.innerHTML = `<tr class="hover:bg-slate-50 transition border-b border-slate-50 fade-enter"><td class="px-6 py-2 text-xs text-slate-400 font-mono">${time}</td><td class="px-6 py-2 text-xs font-bold ${THEMES[cluster].text}">${CLUSTERS[cluster]}</td><td class="px-6 py-2 text-xs text-right font-bold text-slate-600">$${money}</td><td class="px-6 py-2 text-center"><i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i></td></tr>` + table.innerHTML;
+        }
     }
 
     function toast(msg, type='info') {
@@ -265,4 +297,4 @@
     }
 
     init();
-</script>   
+</script>
