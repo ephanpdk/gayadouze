@@ -1,8 +1,26 @@
+<div class="mb-8">
+    <div class="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Quick Simulation Presets:</span>
+        <div class="flex flex-wrap gap-2">
+            <button onclick="setPreset('newbie')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 hover:border-slate-400 transition shadow-sm">
+                <i class="fa-solid fa-seedling mr-1"></i> Newbie
+            </button>
+            <button onclick="setPreset('window')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 hover:border-blue-300 transition shadow-sm">
+                <i class="fa-solid fa-binoculars mr-1"></i> Shopper
+            </button>
+            <button onclick="setPreset('loyalist')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 transition shadow-sm">
+                <i class="fa-solid fa-handshake mr-1"></i> Loyalist
+            </button>
+            <button onclick="setPreset('sultan')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-amber-50 border border-amber-200 text-amber-600 hover:bg-amber-100 hover:border-amber-300 transition shadow-sm">
+                <i class="fa-solid fa-crown mr-1"></i> Sultan
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-    
     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md relative overflow-hidden group">
         <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500 transition-all duration-500" id="indicator-rfm"></div>
-        
         <div class="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
             <div class="flex items-center gap-3">
                 <div class="bg-indigo-50 text-indigo-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm">
@@ -17,7 +35,6 @@
                 LOW SPENDER
             </div>
         </div>
-
         <div class="space-y-6">
             <div class="group/item">
                 <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
@@ -26,7 +43,6 @@
                 </div>
                 <input type="range" id="in-money" oninput="updateLiveSimulator()" min="10" max="5000" step="10" value="1000" class="w-full slider-track h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer">
             </div>
-
             <div class="group/item">
                 <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
                     <label>Frequency (Orders)</label>
@@ -34,7 +50,6 @@
                 </div>
                 <input type="range" id="in-freq" oninput="updateLiveSimulator()" min="1" max="50" step="1" value="5" class="w-full slider-track h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer">
             </div>
-
             <div class="group/item">
                 <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
                     <label>Recency (Days ago)</label>
@@ -42,13 +57,25 @@
                 </div>
                 <input type="range" id="in-rec" oninput="updateLiveSimulator()" min="1" max="365" step="1" value="30" class="w-full slider-track h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer">
             </div>
-            <input type="hidden" id="in-avg" value="2.5">
+            <div class="group/item">
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
+                    <label>Avg Items / Order</label>
+                    <span id="disp-avg" class="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">2.5</span>
+                </div>
+                <input type="range" id="in-avg" oninput="updateLiveSimulator()" min="1" max="20" step="0.5" value="2.5" class="w-full slider-track h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div class="group/item">
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
+                    <label>Unique Products</label>
+                    <span id="disp-unique" class="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">3</span>
+                </div>
+                <input type="range" id="in-unique" oninput="updateLiveSimulator()" min="1" max="50" step="1" value="3" class="w-full slider-track h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer">
+            </div>
         </div>
     </div>
 
     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md relative overflow-hidden group">
         <div class="absolute top-0 left-0 w-1 h-full bg-pink-500 transition-all duration-500" id="indicator-eng"></div>
-
         <div class="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
             <div class="flex items-center gap-3">
                 <div class="bg-pink-50 text-pink-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm">
@@ -63,7 +90,6 @@
                 PASSIVE
             </div>
         </div>
-
         <div class="space-y-6">
             <div class="group/item">
                 <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
@@ -72,7 +98,6 @@
                 </div>
                 <input type="range" id="in-views" oninput="updateLiveSimulator()" min="0" max="500" step="5" value="50" class="w-full slider-track h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer">
             </div>
-
             <div class="group/item">
                 <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
                     <label>Add to Cart</label>
@@ -80,7 +105,6 @@
                 </div>
                 <input type="range" id="in-cart" oninput="updateLiveSimulator()" min="0" max="100" step="1" value="15" class="w-full slider-track h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer">
             </div>
-
             <div class="group/item">
                 <div class="flex justify-between text-xs font-bold text-slate-600 mb-2">
                     <label>Wishlist</label>

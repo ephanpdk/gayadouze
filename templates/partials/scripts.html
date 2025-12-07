@@ -429,6 +429,37 @@ function generateInsights(payload, clusterIdx) {
     return { why, compare, anomaly: action };
 }
 
+function setPreset(type) {
+    const presets = {
+        'newbie': { money: 30, freq: 2, rec: 60, views: 5, cart: 1, wish: 0, avg: 1.2, unique: 1 },
+        'window': { money: 100, freq: 5, rec: 15, views: 150, cart: 8, wish: 10, avg: 2.0, unique: 3 },
+        'loyalist': { money: 800, freq: 25, rec: 7, views: 40, cart: 15, wish: 5, avg: 3.5, unique: 10 },
+        'sultan': { money: 5000, freq: 45, rec: 3, views: 80, cart: 30, wish: 20, avg: 5.0, unique: 25 }
+    };
+
+    const p = presets[type];
+    if(!p) return;
+
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if(el) {
+            el.value = val;
+            el.dispatchEvent(new Event('input'));
+        }
+    };
+
+    setVal('in-money', p.money);
+    setVal('in-freq', p.freq);
+    setVal('in-rec', p.rec);
+    setVal('in-views', p.views);
+    setVal('in-cart', p.cart);
+    setVal('in-wish', p.wish);
+    setVal('in-avg', p.avg);
+    setVal('in-unique', p.unique);
+
+    toast(`Preset Applied: ${type.toUpperCase()}`, 'info');
+}
+
 function resetSim() {
     document.getElementById('in-money').value=1000;
     document.getElementById('disp-money').innerText='$1000';
