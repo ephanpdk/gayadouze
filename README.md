@@ -1,6 +1,3 @@
-Berikut adalah **README.md** yang telah diperbarui secara menyeluruh. Dokumen ini mencakup fitur-fitur baru yang telah kita implementasikan (Input `Avg Items` & `Unique Products`, Visualisasi Radar Chart yang diperbaiki, Bar Risiko Migrasi, dan Dataset Produk Nyata).
-
-Silakan copy kode di bawah ini ke file `README.md` Anda.
 
 -----
 
