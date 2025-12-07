@@ -198,18 +198,18 @@
 
     <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
         <div class="md:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col">
                 <h4 class="text-xs font-bold text-slate-500 uppercase text-center mb-4">Elbow Curve (Optimal K)</h4>
-                <div class="h-48 relative w-full">
+                <div class="h-72 relative w-full flex-1">
                     <canvas id="chart-elbow"></canvas>
                 </div>
                 <p class="text-[10px] text-slate-400 text-center mt-3 border-t border-slate-50 pt-2">
                     Menentukan jumlah cluster optimal. Titik "siku" di K=4 menunjukkan keseimbangan terbaik antara varians dan kompleksitas.
                 </p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col">
                 <h4 class="text-xs font-bold text-slate-500 uppercase text-center mb-4">Cluster Centroids</h4>
-                <div class="h-48 relative w-full">
+                <div class="h-72 relative w-full flex-1">
                     <canvas id="chart-radar"></canvas>
                 </div>
                 <p class="text-[10px] text-slate-400 text-center mt-3 border-t border-slate-50 pt-2">
@@ -219,7 +219,7 @@
         </div>
         <div class="md:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col">
             <h4 class="text-xs font-bold text-slate-500 uppercase text-center mb-4">User Distribution</h4>
-            <div class="h-48 relative w-full flex-1">
+            <div class="h-72 relative w-full flex-1">
                 <canvas id="chart-pie"></canvas>
             </div>
             <p class="text-[10px] text-slate-400 text-center mt-3 border-t border-slate-50 pt-2">
