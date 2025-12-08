@@ -454,8 +454,6 @@ function setPreset(type) {
     setVal('in-views', p.views);
     setVal('in-cart', p.cart);
     setVal('in-wish', p.wish);
-    setVal('in-avg', p.avg);
-    setVal('in-unique', p.unique);
 
     toast(`Preset Applied: ${type.toUpperCase()}`, 'info');
 }
@@ -476,15 +474,18 @@ function resetSim() {
 async function runPrediction() {
     if(!token) { toggleModal('authModal'); toast('Login Required', 'error'); return; }
 
+    const freqVal = parseInt(document.getElementById('in-freq').value);
+    const estimatedUnique = Math.max(1, Math.ceil(freqVal * 0.5));
+
     const payload = {
         Monetary: parseFloat(document.getElementById('in-money').value),
-        Frequency: parseInt(document.getElementById('in-freq').value),
+        Frequency: freqVal,
         Recency: parseInt(document.getElementById('in-rec').value),
         Page_Views: parseInt(document.getElementById('in-views').value),
         Add_to_Cart_Count: parseInt(document.getElementById('in-cart').value),
-        Avg_Items: parseFloat(document.getElementById('in-avg').value),
         Wishlist_Count: parseInt(document.getElementById('in-wish').value),
-        Unique_Products: Math.max(1, Math.ceil(parseInt(document.getElementById('in-freq').value)*0.5))
+        Avg_Items: 2.5,
+        Unique_Products: estimatedUnique 
     };
 
     document.getElementById('state-idle').classList.add('hidden');
